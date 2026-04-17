@@ -1,0 +1,44 @@
+name: Docker Build Template
+
+on:
+  workflow_call:
+    inputs:
+      image_name:
+        required: true
+        type: string
+      build_context:
+        required: false
+        type: string
+        default: '.'
+      dockerfile_path:
+        required: false
+        type: string
+        default: 'Dockerfile'
+      target_stage:
+        required: false
+        type: string
+        default: ''
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v5
+        with:
+          context: ${{ inputs.build_context }}
+          file: ${{ inputs.dockerfile_path }}
+          target: ${{ inputs.target_stage != '' && inputs.target_stage || '' }}
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/${{ inputs.image_name }}:${{ github.sha }}
+          
