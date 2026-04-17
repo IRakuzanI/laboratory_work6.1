@@ -1,0 +1,18 @@
+.docker_build_template:
+  image: docker:24.0.5
+  services:
+    - docker:24.0.5-dind
+  variables:
+    DOCKERFILE_PATH: "Dockerfile"
+    BUILD_CONTEXT: "."
+    TARGET_STAGE: "" 
+  script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin $CI_REGISTRY
+    - >
+      if [ -n "$TARGET_STAGE" ]; then
+        STAGE_ARG="--target $TARGET_STAGE"
+      else
+        STAGE_ARG=""
+      fi
+    - docker build $STAGE_ARG -t $CI_REGISTRY_IMAGE/$IMAGE_NAME:$CI_COMMIT_SHORT_SHA -f $DOCKERFILE_PATH $BUILD_CONTEXT
+    - docker push $CI_REGISTRY_IMAGE/$IMAGE_NAME:$CI_COMMIT_SHORT_SHA
